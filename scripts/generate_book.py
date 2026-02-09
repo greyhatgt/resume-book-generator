@@ -111,6 +111,8 @@ def main() -> int:
 
     # Output dir for intermediate files
     out_dir = output_path.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     project_root = Path(__file__).resolve().parent.parent
     typ_path = out_dir / "cover_toc.typ"
     cover_toc_path = out_dir / "cover_toc.pdf"
