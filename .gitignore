@@ -1,0 +1,33 @@
+# Nix / Direnv
+.direnv/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Generated output
+output/
+
+# Input data (resumes, CSV - may contain personal info)
+input/
+input-raw/
+candidates.csv
+candidates*.csv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

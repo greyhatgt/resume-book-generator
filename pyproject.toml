@@ -1,0 +1,13 @@
+[project]
+name = "resume-book-generator"
+version = "0.1.0"
+description = "Generate a resume book with cover, TOC, and merged PDFs with selectable text"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pypdf>=4.0",
+    "pymupdf>=1.24",
+    "pandas>=2.0",
+]
+
+[tool.uv]
