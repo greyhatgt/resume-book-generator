@@ -56,7 +56,7 @@ def main() -> int:
     parser.add_argument("--csv", required=True, type=Path, help="Path to candidates.csv")
     parser.add_argument("--input", required=True, type=Path, help="Folder containing resume PDFs")
     parser.add_argument("--output", required=True, type=Path, help="Output PDF path")
-    parser.add_argument("--title", default="Resume Book", help="Cover page title")
+    parser.add_argument("--title", default="GreyHat Resume Book", help="Cover page title")
     parser.add_argument("--subtitle", default=None, help="Cover page subtitle")
     args = parser.parse_args()
 
@@ -83,14 +83,31 @@ def main() -> int:
         print("Error: No valid candidates in CSV", file=sys.stderr)
         return 1
 
-    # Warn about missing PDFs
+    # Exclude Fall 1979 (invalid/placeholder grad date)
+    candidates = candidates[
+        ~candidates["grad_date"].astype(str).str.strip().str.lower().isin(["fall 1979"])
+    ].reset_index(drop=True)
+    if candidates.empty:
+        print("Error: No valid candidates after filtering", file=sys.stderr)
+        return 1
+
+    # Filter to only candidates with existing PDFs (page counts must match merged output)
     missing = []
     for _, row in candidates.iterrows():
         fn = str(row["filename"]).strip()
         if not (input_dir / fn).exists():
             missing.append(fn)
     if missing:
-        print(f"Warning: Missing PDFs: {missing}", file=sys.stderr)
+        print(f"Excluding {len(missing)} candidates with missing PDFs", file=sys.stderr)
+        candidates = candidates[
+            candidates["filename"].astype(str).str.strip().apply(
+                lambda fn: (input_dir / fn).exists()
+            )
+        ].reset_index(drop=True)
+
+    if candidates.empty:
+        print("Error: No candidates with existing PDFs", file=sys.stderr)
+        return 1
 
     # Output dir for intermediate files
     out_dir = output_path.parent
@@ -120,10 +137,9 @@ def main() -> int:
 
     # Generate section title pages (one per grad_date group)
     groups = list(candidates.groupby("grad_date", sort=False))
-    grad_dates = [str(gd) for gd, _ in groups]
     section_typ_path = out_dir / "section_pages.typ"
     section_pdf_path = out_dir / "section_pages.pdf"
-    generate_section_pages_typst(grad_dates, section_typ_path)
+    generate_section_pages_typst(groups, section_typ_path)
     if not run_typst_compile(section_typ_path, section_pdf_path):
         return 1
 

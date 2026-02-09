@@ -66,6 +66,17 @@ Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown grad
 
 - `--title`: Cover page title (default: "Resume Book")
 - `--subtitle`: Cover page subtitle (optional)
+- `--cover-style`: Cover/title page style 1–10 (default: 1)
+  - 1: Minimal Crest — clean, sponsor-friendly
+  - 2: Terminal Boot — dark, terminal text
+  - 3: Binary Hat Spotlight — cyan binary wave background
+  - 4: Blueprint Grid — subtle engineering vibe
+  - 5: Security Badge — ID card layout, cyan bar
+  - 6: Shield Outline — thin cyan shield behind title
+  - 7: Circuit Trace — cyan circuit frame border
+  - 8: Split-tone Diagonal — two greys, diagonal split
+  - 9: Monochrome + Cyan Pop — grayscale with cyan accent
+  - 10: Data Stream — dark, cyan stream accent
 
 ## How It Works
 
