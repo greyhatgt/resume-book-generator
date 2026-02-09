@@ -1,6 +1,6 @@
-// Section title page - same formatting as cover. Call: section-page(grad-date, count, build)
+// Section title page - same formatting as cover. Call: section-page(grad-date, count, release, build)
 
-#let section-page(grad-date, count, build) = [
+#let section-page(grad-date, count, release, build) = [
   // Greyhat in ASCII binary: G r e y H a t. Per-column blanks between each letter
   #let blanks-min = 2
   #let blanks-max = 6
@@ -80,14 +80,14 @@
   ]
 
   #place(top + left, dx: -0.5in, dy: -0.5in)[
-    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:~#"\u{0024}" resumebook #"\u{002D}\u{002D}"section "#grad-date"]
+    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:~#"\u{0024}" resumebook #"\u{002D}\u{002D}"info #"\u{002D}\u{002D}"section "#grad-date"]
     #linebreak()
     #linebreak()
-    #text(size: 9pt, font: mono, fill: light-gray)[#subtitle]
+    #text(size: 9pt, font: mono, fill: light-gray)[Greyhat Resume Book #h(0.3em) — #h(0.3em) Sponsor Edition]
     #linebreak()
-    #text(size: 9pt, font: mono, fill: light-gray)[Resumes: #count]
+    #text(size: 9pt, font: mono, fill: light-gray)[Release: #release (build #build)]
     #linebreak()
-    #text(size: 9pt, font: mono, fill: light-gray)[Build: #build]
+    #text(size: 9pt, font: mono, fill: light-gray)[Candidates: #count]
     #linebreak()
     #text(size: 9pt, font: mono, fill: light-gray)[Contact: greyhat.gt#"\u{0040}"gmail.com]
     #linebreak()
