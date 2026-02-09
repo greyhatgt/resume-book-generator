@@ -63,6 +63,40 @@ nix-shell --run "uv run python scripts/generate_book.py --csv candidates.csv --i
 
 Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown graduation dates.
 
+### Tag sections config
+
+Tags that get a dedicated TOC section (Leadership, Mentor, CTF Competitor, etc.) are configured in `resume_book.json`:
+
+```json
+{
+  "tag_sections": ["Leadership", "Mentor", "CTF Competitor"],
+  "hidden_tags": ["Leadership"]
+}
+```
+
+- `tag_sections`: Tags that get a dedicated TOC section. Matching is case-insensitive.
+- `hidden_tags`: Tags to hide from badge display (e.g. Leadership when already in the Leadership section).
+
+Override via CLI: `--tag-sections "..."` and `--hidden-tags "Leadership"`.
+
+### Sync from Google Drive / Google Sheets
+
+1. Install sync dependencies: `uv sync --extra sync`
+2. Sync a Drive folder to `input/`:
+
+```bash
+uv run python scripts/sync_drive_to_input.py "https://drive.google.com/drive/folders/FOLDER_ID"
+```
+
+3. Sync a Google Sheet to `candidates.csv`:
+
+```bash
+uv run python scripts/sync_sheet_to_csv.py "https://docs.google.com/spreadsheets/d/SHEET_ID"
+```
+
+- Drive folder must be shared with "Anyone with the link" (or use a different sync tool for private folders).
+- Google Sheet: public sheets work without credentials; for private sheets, place service account JSON at `~/.config/gspread/service_account.json` and share the sheet with the service account's `client_email`.
+
 ### Options
 
 - `--title`: Cover page title (default: "GreyHat Resume Book")
@@ -97,8 +131,10 @@ resume-book-generator/
 ├── scripts/
 │   ├── generate_book.py       # Main CLI
 │   ├── prepare_input.py       # Copy PDFs + convert DOCX → input/
-│   ├── convert_docx_to_pdf.py # DOCX to PDF only
-│   └── generate_csv_from_resumes.py # Template CSV from filenames
+│   ├── convert_docx_to_pdf.py  # DOCX to PDF only
+│   ├── generate_csv_from_resumes.py # Template CSV from filenames
+│   ├── sync_drive_to_input.py # Sync Google Drive folder → input/
+│   └── sync_sheet_to_csv.py   # Sync Google Sheet → candidates.csv
 ├── shell.nix                  # typst, ghostscript, libreoffice
 └── pyproject.toml
 ```

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import shutil
 import subprocess
@@ -20,12 +21,33 @@ from src.merge.pdf_merger import (
     set_pdf_outline,
 )
 from src.typst.generator import (
+    DEFAULT_TAG_SECTIONS,
     compute_page_offsets,
     compute_section_page_numbers,
     generate_section_pages_typst,
     generate_typst,
     load_candidates,
 )
+
+CONFIG_FILENAME = "resume_book.json"
+
+
+def load_config(project_root: Path) -> tuple[list[str], list[str]]:
+    """Load tag_sections and hidden_tags from config file. Returns (tag_sections, hidden_tags)."""
+    tag_sections = DEFAULT_TAG_SECTIONS
+    hidden_tags: list[str] = []
+    config_path = project_root / CONFIG_FILENAME
+    if config_path.exists():
+        try:
+            with config_path.open(encoding="utf-8") as f:
+                data = json.load(f)
+            if "tag_sections" in data:
+                tag_sections = list(data["tag_sections"])
+            if "hidden_tags" in data:
+                hidden_tags = list(data["hidden_tags"])
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Warning: Could not parse {CONFIG_FILENAME}: {e}", file=sys.stderr)
+    return tag_sections, hidden_tags
 
 
 def estimate_toc_pages(num_candidates: int) -> int:
@@ -58,6 +80,20 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path, help="Output PDF path")
     parser.add_argument("--title", default="GreyHat Resume Book", help="Cover page title")
     parser.add_argument("--subtitle", default=None, help="Cover page subtitle")
+    parser.add_argument(
+        "--tag-sections",
+        type=str,
+        default=None,
+        help="Comma-separated tag section titles (e.g. Leadership,Mentor,CTF Competitor). Overrides %s."
+        % CONFIG_FILENAME,
+    )
+    parser.add_argument(
+        "--hidden-tags",
+        type=str,
+        default=None,
+        help="Comma-separated tags to hide from badge display (e.g. Leadership). Overrides %s."
+        % CONFIG_FILENAME,
+    )
     args = parser.parse_args()
 
     csv_path = args.csv
@@ -109,11 +145,17 @@ def main() -> int:
         print("Error: No candidates with existing PDFs", file=sys.stderr)
         return 1
 
+    # Tag sections and hidden tags: CLI overrides config file overrides default
+    project_root = Path(__file__).resolve().parent.parent
+    tag_sections, hidden_tags = load_config(project_root)
+    if args.tag_sections is not None:
+        tag_sections = [s.strip() for s in args.tag_sections.split(",") if s.strip()]
+    if args.hidden_tags is not None:
+        hidden_tags = [s.strip() for s in args.hidden_tags.split(",") if s.strip()]
+
     # Output dir for intermediate files
     out_dir = output_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    project_root = Path(__file__).resolve().parent.parent
     typ_path = out_dir / "cover_toc.typ"
     cover_toc_path = out_dir / "cover_toc.pdf"
 
@@ -133,7 +175,14 @@ def main() -> int:
     actual_toc_only = actual_toc_pages - 1
 
     if actual_toc_only != toc_estimate:
-        generate_typst(candidates, typ_path, args.title, args.subtitle)
+        generate_typst(
+            candidates,
+            typ_path,
+            args.title,
+            args.subtitle,
+            tag_sections=tag_sections,
+            hidden_tags=hidden_tags,
+        )
         if not run_typst_compile(typ_path, cover_toc_path):
             return 1
 

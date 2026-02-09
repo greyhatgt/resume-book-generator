@@ -10,4 +10,11 @@ dependencies = [
     "pandas>=2.0",
 ]
 
+[project.optional-dependencies]
+sync = [
+    "gdown>=5.0",
+    "gspread>=6.0",
+    "google-auth>=2.0",
+]
+
 [tool.uv]

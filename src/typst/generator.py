@@ -141,13 +141,26 @@ def _ensure_templates_in_output_dir(output_dir: Path) -> None:
             shutil.copy2(src, dst)
 
 
+DEFAULT_TAG_SECTIONS: list[str] = ["Leadership", "Mentor", "CTF Competitor"]
+
+
 def generate_typst(
     candidates: pd.DataFrame,
     output_path: Path,
     title: str = "GreyHat Resume Book",
     subtitle: str | None = None,
+    tag_sections: list[str] | None = None,
+    hidden_tags: list[str] | None = None,
 ) -> str:
     """Generate Typst source and write to output_path. Returns the generated content."""
+    if tag_sections is None:
+        tag_sections = DEFAULT_TAG_SECTIONS
+    if hidden_tags is None:
+        hidden_tags = []
+
+    # Set of lowercase tag substrings to hide from badge display
+    hidden_tags_lower = {t.lower().strip() for t in hidden_tags}
+
     out_dir = output_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
     _ensure_templates_in_output_dir(out_dir)
@@ -186,17 +199,7 @@ def generate_typst(
         "",
     ]
 
-    # Tag sections at top: Leadership, Mentor, CTF Competitor (names link to same resume pages)
-    mentor = candidates[
-        candidates["tags"].astype(str).str.lower().str.contains("mentor", na=False)
-    ]
-    leadership = candidates[
-        candidates["tags"].astype(str).str.lower().str.contains("leadership", na=False)
-    ]
-    ctf = candidates[
-        candidates["tags"].astype(str).str.lower().str.contains("ctf competitor", na=False)
-    ]
-
+    # Tag sections at top (names link to same resume pages)
     def _append_section_table(
         rows_df: pd.DataFrame,
         include_trailing: bool = True,
@@ -223,6 +226,8 @@ def generate_typst(
             tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
             badge_parts = []
             for tag in tags_list:
+                if tag.lower().strip() in hidden_tags_lower:
+                    continue
                 tag_esc = _escape_typst_string(tag)
                 badge_parts.append(
                     f'#box(fill: {_CYAN}, inset: (x: 4pt, y: 2pt), radius: 4pt, baseline: 10%)[#text(size: 8pt, fill: rgb("#323232"))[{tag_esc}]]'
@@ -250,32 +255,20 @@ def generate_typst(
             lines.append("#v(1em)")
             lines.append("")
 
-    if not leadership.empty:
-        lines.append("#block(breakable: false)[")
-        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[Leadership]")
-        lines.append("#v(-0.5em)")
-        _append_section_table(leadership, include_trailing=False, right_column="grad_date")
-        lines.append("]")
-        lines.append("#v(1em)")
-        lines.append("")
-
-    if not mentor.empty:
-        lines.append("#block(breakable: false)[")
-        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[Mentor]")
-        lines.append("#v(-0.5em)")
-        _append_section_table(mentor, include_trailing=False, right_column="grad_date")
-        lines.append("]")
-        lines.append("#v(1em)")
-        lines.append("")
-
-    if not ctf.empty:
-        lines.append("#block(breakable: false)[")
-        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[CTF Competitor]")
-        lines.append("#v(-0.5em)")
-        _append_section_table(ctf, include_trailing=False, right_column="grad_date")
-        lines.append("]")
-        lines.append("#v(1em)")
-        lines.append("")
+    for section_title in tag_sections:
+        tag_substring = section_title.lower().strip()
+        section_df = candidates[
+            candidates["tags"].astype(str).str.lower().str.contains(tag_substring, na=False)
+        ]
+        if not section_df.empty:
+            title_esc = _escape_typst_string(section_title)
+            lines.append("#block(breakable: false)[")
+            lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[{title_esc}]")
+            lines.append("#v(-0.5em)")
+            _append_section_table(section_df, include_trailing=False, right_column="grad_date")
+            lines.append("]")
+            lines.append("#v(1em)")
+            lines.append("")
 
     # Group by grad_date; TOC stays on one page; section headings are plain text (links added via PyMuPDF)
     groups = list(candidates.groupby("grad_date", sort=False))
