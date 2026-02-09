@@ -1,6 +1,6 @@
 # Resume Book Generator
 
-Generate a resume book as a single PDF with a cover page, table of contents (grouped by graduation date), section title pages between resume groups, and merged resume PDFs. TOC names link to resume pages; section headings (e.g., "Dec 2024") link to their section title pages; LinkedIn and GitHub appear as icons after each name when present. All resume text remains selectable. Uses US Letter paper, GreyHat branding (logo, gray/cyan colors), and Font Awesome icons.
+Generate a resume book as a single PDF with a terminal-style cover page, table of contents (grouped by graduation date), section title pages between resume groups, and merged resume PDFs. TOC names link to resume pages; section headings (e.g., "Dec 2024") link to their section title pages; LinkedIn and GitHub appear as icons after each name when present. All resume text remains selectable. Uses US Letter paper, GreyHat branding (logo, gray/cyan colors), binary matrix background, and Font Awesome icons.
 
 ## Requirements
 
@@ -64,19 +64,8 @@ Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown grad
 
 ### Options
 
-- `--title`: Cover page title (default: "Resume Book")
+- `--title`: Cover page title (default: "GreyHat Resume Book")
 - `--subtitle`: Cover page subtitle (optional)
-- `--cover-style`: Cover/title page style 1–10 (default: 1)
-  - 1: Minimal Crest — clean, sponsor-friendly
-  - 2: Terminal Boot — dark, terminal text
-  - 3: Binary Hat Spotlight — cyan binary wave background
-  - 4: Blueprint Grid — subtle engineering vibe
-  - 5: Security Badge — ID card layout, cyan bar
-  - 6: Shield Outline — thin cyan shield behind title
-  - 7: Circuit Trace — cyan circuit frame border
-  - 8: Split-tone Diagonal — two greys, diagonal split
-  - 9: Monochrome + Cyan Pop — grayscale with cyan accent
-  - 10: Data Stream — dark, cyan stream accent
 
 ## How It Works
 
@@ -98,7 +87,11 @@ resume-book-generator/
 │   └── CHATGPT_RESUME_EXTRACTION_PROMPT.md
 ├── candidates.csv             # Candidate data
 ├── src/
-│   ├── typst/generator.py     # Typst cover + TOC generation
+│   ├── typst/
+│   │   ├── generator.py       # Typst cover + TOC + section page generation
+│   │   └── templates/
+│   │       ├── cover.typ      # Terminal-style cover template
+│   │       └── section_page.typ # Section title page template
 │   └── merge/pdf_merger.py    # PDF merge + internal link injection
 ├── scripts/
 │   ├── generate_book.py       # Main CLI
