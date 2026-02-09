@@ -69,11 +69,12 @@ def generate_csv(input_dir: Path, output_path: Path) -> None:
             "linkedin": "",
             "github": "",
             "phone": "",
+            "tags": "",
         })
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=["filename", "name", "major", "grad_date", "email", "linkedin", "github", "phone"],
+            fieldnames=["filename", "name", "major", "grad_date", "email", "linkedin", "github", "phone", "tags"],
         )
         writer.writeheader()
         writer.writerows(rows)

@@ -80,7 +80,7 @@
   ]
 
   #place(top + left, dx: -0.5in, dy: -0.5in)[
-    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:~#"\u{0024}" resumebook #"\u{002D}\u{002D}"info #"\u{002D}\u{002D}"section "#grad-date"]
+    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:#"\u{007E}"#"\u{0024}" resumebook #"\u{002D}\u{002D}"info #"\u{002D}\u{002D}"section "#grad-date"]
     #linebreak()
     #linebreak()
     #text(size: 9pt, font: mono, fill: light-gray)[Greyhat Resume Book #h(0.3em) — #h(0.3em) Sponsor Edition]
@@ -94,8 +94,8 @@
     #text(size: 9pt, font: mono, fill: light-gray)[Privacy: recruiting use only; do not redistribute]
     #linebreak()
     #linebreak()
-    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:~#"\u{0024}" ]
-    #text(size: 9pt, font: mono, fill: cyan)[▌]
+    #text(size: 9pt, font: mono, fill: cyan)[greyhat#"\u{0040}"gt:#"\u{007E}"#"\u{0024}" ]
+    #text(size: 9pt, font: mono, fill: cyan)[█]
   ]
 
   #align(center)[

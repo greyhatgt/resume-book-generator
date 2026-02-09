@@ -116,14 +116,14 @@ def set_pdf_outline(
     doc = pymupdf.open(pdf_path)
     try:
         toc: list[tuple[int, str, int]] = []
-        toc.append((1, "Cover", 0))
+        toc.append((1, "Cover", 1))
         if cover_toc_page_count > 1:
-            toc.append((1, "Table of Contents", 1))
+            toc.append((1, "Table of Contents", 2))
 
         for label, section_page, name_pages in sections:
-            toc.append((2, label, section_page))
+            toc.append((2, label, section_page + 1))
             for name, page in name_pages:
-                toc.append((3, name, page))
+                toc.append((3, name, page + 1))
 
         doc.set_toc(toc)
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -164,27 +164,22 @@ def add_internal_links(
             if target_page_idx < 0 or target_page_idx >= len(doc):
                 continue
 
-            found = False
+            dest_page = doc[target_page_idx]
+            mb = dest_page.mediabox
+            top_left = pymupdf.Point(mb.x0, mb.y1)
+            link_spec = {
+                "kind": pymupdf.LINK_GOTO,
+                "page": target_page_idx,
+                "to": top_left,
+            }
             for page_num in range(toc_start, toc_end):
                 if page_num >= len(doc):
                     break
                 page = doc[page_num]
                 rects = page.search_for(name, quads=False)
-                if rects:
-                    # Use first match; link to top of target page (PDF coords: y increases upward)
-                    dest_page = doc[target_page_idx]
-                    mb = dest_page.mediabox
-                    top_left = pymupdf.Point(mb.x0, mb.y1)
-                    link = {
-                        "kind": pymupdf.LINK_GOTO,
-                        "from": rects[0],
-                        "page": target_page_idx,
-                        "to": top_left,
-                    }
+                for rect in rects:
+                    link = {**link_spec, "from": rect}
                     page.insert_link(link)
-                    found = True
-                if found:
-                    break
 
         # Add section heading links after name links - go to page before first resume (section title)
         for label, target_page in section_links or []:

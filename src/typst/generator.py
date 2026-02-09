@@ -59,7 +59,7 @@ def load_candidates(csv_path: Path, input_dir: Path) -> pd.DataFrame:
     df = df[df["grad_date"].astype(str).str.strip() != ""]
 
     # Fill missing optional columns
-    for col in ["major", "email", "linkedin", "github", "phone"]:
+    for col in ["major", "email", "linkedin", "github", "phone", "tags"]:
         if col not in df.columns:
             df[col] = ""
         df[col] = df[col].fillna("").astype(str)
@@ -186,44 +186,106 @@ def generate_typst(
         "",
     ]
 
-    # Group by grad_date; TOC stays on one page; section headings are plain text (links added via PyMuPDF)
-    groups = list(candidates.groupby("grad_date", sort=False))
-    for grad_date, group_df in groups:
-        grad_display = _escape_typst_string(str(grad_date))
-        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[#fa-link(size: 10pt) {grad_display}]")
-        lines.append("#v(-0.5em)")
+    # Tag sections at top: Leadership, Mentor, CTF Competitor (names link to same resume pages)
+    mentor = candidates[
+        candidates["tags"].astype(str).str.lower().str.contains("mentor", na=False)
+    ]
+    leadership = candidates[
+        candidates["tags"].astype(str).str.lower().str.contains("leadership", na=False)
+    ]
+    ctf = candidates[
+        candidates["tags"].astype(str).str.lower().str.contains("ctf competitor", na=False)
+    ]
+
+    def _append_section_table(
+        rows_df: pd.DataFrame,
+        include_trailing: bool = True,
+        right_column: str = "major",
+    ) -> None:
+        right_header = "*Graduation Date*" if right_column == "grad_date" else "*Major*"
         lines.append(
             "#table("
             "columns: (1fr, 1fr),"
             "stroke: none,"
             "inset: 8pt,"
             "align: (left, right),"
-            "fill: (x, y) => if y == 0 { rgb(\"#c0c0c0\") } else if calc.rem(y, 2) == 1 { white } else { rgb(\"#f5f5f5\") },"  # header gray; rows alternate white/light gray
+            "fill: (x, y) => if y == 0 { rgb(\"#c0c0c0\") } else if calc.rem(y, 2) == 1 { white } else { rgb(\"#f5f5f5\") },"
         )
-        lines.append("  table.header([*Name*], [*Major*],),")
-
-        for _, row in group_df.iterrows():
+        lines.append(f"  table.header([*Name*], [{right_header}],),")
+        for _, row in rows_df.iterrows():
             name = _escape_typst_string(str(row["name"]))
-            major = _escape_typst_string(str(row.get("major", "") or ""))
+            right_val = _escape_typst_string(
+                str(row.get("grad_date" if right_column == "grad_date" else "major", "") or "")
+            )
             linkedin_raw = str(row.get("linkedin", "") or "").strip()
             github_raw = str(row.get("github", "") or "").strip()
-
-            # Build name cell: name + LinkedIn/GitHub icons if present
-            icon_parts: list[str] = []
+            tags_raw = str(row.get("tags", "") or "").strip()
+            tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
+            badge_parts = []
+            for tag in tags_list:
+                tag_esc = _escape_typst_string(tag)
+                badge_parts.append(
+                    f'#box(fill: {_CYAN}, inset: (x: 4pt, y: 2pt), radius: 4pt, baseline: 10%)[#text(size: 8pt, fill: rgb("#323232"))[{tag_esc}]]'
+                )
+            badges = " ".join(badge_parts)
+            icon_parts = []
             if linkedin_raw and linkedin_raw.startswith("http"):
-                linkedin_escaped = _escape_typst_string(linkedin_raw)
-                icon_parts.append(f'#link("{linkedin_escaped}")[#fa-linkedin(size: 9pt)]')
+                icon_parts.append(f'#link("{_escape_typst_string(linkedin_raw)}")[#fa-linkedin(size: 9pt)]')
             if github_raw and github_raw.startswith("http"):
-                github_escaped = _escape_typst_string(github_raw)
-                icon_parts.append(f'#link("{github_escaped}")[#fa-github(size: 9pt)]')
+                icon_parts.append(f'#link("{_escape_typst_string(github_raw)}")[#fa-github(size: 9pt)]')
             icons = " ".join(icon_parts)
-            name_with_icons = f'#text("{name}")' + (f" {icons}" if icons else "")
-
-            # Name as plain text with icons (internal links added post-merge via PyMuPDF)
-            name_cell = name_with_icons
-            lines.append(f"  [{name_cell}], [#text(\"{major}\")],")
-
+            name_parts = [
+                # "#fa-link(size: 7pt)", 
+                # "#h(0.1em)", 
+                f'#text("{name}")'
+            ]
+            if icons:
+                name_parts.append(icons)
+            if badges:
+                name_parts.append(badges)
+            name_cell = " ".join(name_parts)
+            lines.append(f"  [{name_cell}], [#text(\"{right_val}\")],")
         lines.append(")")
+        if include_trailing:
+            lines.append("#v(1em)")
+            lines.append("")
+
+    if not leadership.empty:
+        lines.append("#block(breakable: false)[")
+        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[Leadership]")
+        lines.append("#v(-0.5em)")
+        _append_section_table(leadership, include_trailing=False, right_column="grad_date")
+        lines.append("]")
+        lines.append("#v(1em)")
+        lines.append("")
+
+    if not mentor.empty:
+        lines.append("#block(breakable: false)[")
+        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[Mentor]")
+        lines.append("#v(-0.5em)")
+        _append_section_table(mentor, include_trailing=False, right_column="grad_date")
+        lines.append("]")
+        lines.append("#v(1em)")
+        lines.append("")
+
+    if not ctf.empty:
+        lines.append("#block(breakable: false)[")
+        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[CTF Competitor]")
+        lines.append("#v(-0.5em)")
+        _append_section_table(ctf, include_trailing=False, right_column="grad_date")
+        lines.append("]")
+        lines.append("#v(1em)")
+        lines.append("")
+
+    # Group by grad_date; TOC stays on one page; section headings are plain text (links added via PyMuPDF)
+    groups = list(candidates.groupby("grad_date", sort=False))
+    for grad_date, group_df in groups:
+        grad_display = _escape_typst_string(str(grad_date))
+        lines.append("#block(breakable: false)[")
+        lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[#fa-link(size: 10pt) {grad_display}]")
+        lines.append("#v(-0.5em)")
+        _append_section_table(group_df, include_trailing=False)
+        lines.append("]")
         lines.append("#v(1em)")
         lines.append("")
 

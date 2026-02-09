@@ -49,16 +49,17 @@ nix-shell --run "uv run python scripts/generate_book.py --csv candidates.csv --i
 
 ### CSV Schema
 
-| Column    | Required | Description                             |
-| --------- | -------- | --------------------------------------- |
-| filename  | yes      | PDF filename (e.g. `john.pdf`)          |
-| name      | yes      | Full name                               |
-| major     | no       | Degree/major                            |
-| grad_date | yes      | Graduation (e.g. `May 2025`)            |
-| email     | no       | Email address                           |
-| linkedin  | no       | LinkedIn URL (shown as icon after name) |
-| github    | no       | GitHub URL (shown as icon after name)   |
-| phone     | no       | Phone number                            |
+| Column    | Required | Description                                                                       |
+| --------- | -------- | --------------------------------------------------------------------------------- |
+| filename  | yes      | PDF filename (e.g. `john.pdf`)                                                    |
+| name      | yes      | Full name                                                                         |
+| major     | no       | Degree/major                                                                      |
+| grad_date | yes      | Graduation (e.g. `May 2025`)                                                      |
+| email     | no       | Email address                                                                     |
+| linkedin  | no       | LinkedIn URL (shown as icon after name)                                           |
+| github    | no       | GitHub URL (shown as icon after name)                                             |
+| phone     | no       | Phone number                                                                      |
+| tags      | no       | Comma-separated tags (e.g. `Leadership, Mentors, CTF Competitor`) shown as badges |
 
 Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown graduation dates.
 
@@ -69,7 +70,7 @@ Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown grad
 
 ## How It Works
 
-1. **Typst** generates cover + TOC (no resume embedding). Names are plain text with optional LinkedIn/GitHub icons; section headings link to section title pages.
+1. **Typst** generates cover + TOC (no resume embedding). Names are plain text with optional tag badges and LinkedIn/GitHub icons; section headings link to section title pages.
 2. **Section pages**: A separate Typst file generates one title page per graduation group (e.g., "Dec 2024", "May 2025").
 3. **Merge**: `cover_toc.pdf` + section title pages + resume PDFs are merged (PyMuPDF, with section pages inserted between groups).
 4. **Link injection**: PyMuPDF adds internal link annotations on TOC pages—each name becomes a clickable link to its resume page.
