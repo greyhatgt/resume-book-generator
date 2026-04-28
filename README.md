@@ -40,12 +40,21 @@ uv run python scripts/convert_docx_to_pdf.py --input input-raw --output input-pd
 uv run python scripts/generate_csv_from_resumes.py --input input --output candidates.csv
 ```
 
-4. Edit `candidates.csv` to fill in `major`, `grad_date`, `email`, `linkedin`, `github`. Use the [ChatGPT prompt](docs/CHATGPT_RESUME_EXTRACTION_PROMPT.md) to extract data from resumes in bulk.
+`scripts/generate_csv_from_resumes.py` is only a filename/name scaffold. Do not use repo scripts to extract candidate fields from resume text.
+
+4. Fill in `candidates.csv` by manually reviewing the resumes with AI assistance.
+   The expected workflow is:
+   - use the template CSV only for `filename` and an initial `name`
+   - read each resume and manually confirm `name`, `major`, `grad_date`, `email`, `linkedin`, `github`, `phone`, and `tags`
+   - keep the reviewed result in `candidates.csv`
+   For the current GreyHat workflow, the canonical local file is `candidates.csv`, and `output/manual_review/candidates_manual.csv` is the preserved manual-review copy.
 5. Generate the resume book:
 
 ```bash
-nix-shell --run "uv run python scripts/generate_book.py --csv candidates.csv --input input --output output/resume_book.pdf"
+nix-shell -p typst ghostscript libreoffice python313Packages.pandas python313Packages.pymupdf python313Packages.pypdf --run "python scripts/generate_book.py --csv candidates.csv --input input --output output/resume_book.pdf"
 ```
+
+The local `.venv` currently fails to import `pymupdf` on this machine due to a missing `libstdc++.so.6`, so prefer the Nix Python command above for final builds.
 
 ### CSV Schema
 
@@ -62,6 +71,17 @@ nix-shell --run "uv run python scripts/generate_book.py --csv candidates.csv --i
 | tags      | no       | Comma-separated tags (e.g. `Leadership, Mentors, CTF Competitor`) shown as badges |
 
 Candidates are sorted by `grad_date` then `name`. Use "Unknown" for unknown graduation dates.
+
+Current local normalization rules:
+
+- Names: title case, never all caps
+- `Bachelor of Science` -> `B.S.`
+- `Master of Science in` -> `M.S. in`
+- LinkedIn URLs -> `https://www.linkedin.com/...`
+- GitHub URLs -> `https://github.com/...`
+- Phone numbers -> `123-456-7890` or `+1 123-456-7890`
+- If the resume does not clearly state `grad_date`, keep the old sheet value instead of blanking it
+- Preserve sheet `tags`; they are not resume-derived
 
 ### Tag sections config
 
@@ -96,6 +116,17 @@ uv run python scripts/sync_sheet_to_csv.py "https://docs.google.com/spreadsheets
 
 - Drive folder must be shared with "Anyone with the link" (or use a different sync tool for private folders).
 - Google Sheet: public sheets work without credentials; for private sheets, place service account JSON at `~/.config/gspread/service_account.json` and share the sheet with the service account's `client_email`.
+- These sync scripts only move files and tabular data. They are not approved for extracting candidate fields from resumes.
+
+### Manual Review Artifacts
+
+The current repo state includes local-only review artifacts from a manual resume pass:
+
+- `output/manual_review/candidates_manual.csv`: merged manual-review candidate data
+- `output/manual_review/chunks/`: per-chunk manual review CSVs
+- `output/manual_review/sheet_vs_local_diff.txt`: current diff between the reverted Google Sheet snapshot and the local `candidates.csv`
+
+These are local review outputs; they are not applied back to Google Sheets automatically.
 
 ### Options
 
@@ -109,6 +140,11 @@ uv run python scripts/sync_sheet_to_csv.py "https://docs.google.com/spreadsheets
 3. **Merge**: `cover_toc.pdf` + section title pages + resume PDFs are merged (PyMuPDF, with section pages inserted between groups).
 4. **Link injection**: PyMuPDF adds internal link annotations on TOC pages—each name becomes a clickable link to its resume page.
 5. Resume text stays selectable because PDFs are merged, not embedded as images.
+
+The current code also fixes a previous TOC-link bug:
+
+- `scripts/generate_book.py` now refreshes the actual TOC page count after the second Typst pass.
+- `src/merge/pdf_merger.py` uses the correct 1-based to 0-based page conversion for TOC and section links.
 
 ## Project Structure
 
@@ -141,4 +177,8 @@ resume-book-generator/
 
 ## Data Extraction
 
-To populate the CSV from resume text, use the [ChatGPT prompt](docs/CHATGPT_RESUME_EXTRACTION_PROMPT.md) for bulk extraction. Upload your resumes to ChatGPT and paste the prompt; it will output CSV rows you can merge into `candidates.csv`.
+Resume-field extraction is intentionally manual AI-assisted review, not repo automation.
+
+- Use [docs/CHATGPT_RESUME_EXTRACTION_PROMPT.md](docs/CHATGPT_RESUME_EXTRACTION_PROMPT.md) as a review prompt.
+- Read the actual resumes and confirm each row before treating it as canonical.
+- Do not rely on repo scripts to infer `major`, `grad_date`, contact links, or tags from resume text.

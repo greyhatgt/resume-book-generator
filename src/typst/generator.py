@@ -274,11 +274,9 @@ def generate_typst(
     groups = list(candidates.groupby("grad_date", sort=False))
     for grad_date, group_df in groups:
         grad_display = _escape_typst_string(str(grad_date))
-        lines.append("#block(breakable: false)[")
         lines.append(f"#text(size: 14pt, weight: \"bold\", fill: {_CYAN})[#fa-link(size: 10pt) {grad_display}]")
         lines.append("#v(-0.5em)")
         _append_section_table(group_df, include_trailing=False)
-        lines.append("]")
         lines.append("#v(1em)")
         lines.append("")
 

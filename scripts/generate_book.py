@@ -166,7 +166,14 @@ def main() -> int:
 
     # Generate cover + TOC (first pass, no section links yet)
     toc_estimate = estimate_toc_pages(len(candidates))
-    generate_typst(candidates, typ_path, args.title, args.subtitle)
+    generate_typst(
+        candidates,
+        typ_path,
+        args.title,
+        args.subtitle,
+        tag_sections=tag_sections,
+        hidden_tags=hidden_tags,
+    )
 
     if not run_typst_compile(typ_path, cover_toc_path):
         return 1
@@ -185,6 +192,7 @@ def main() -> int:
         )
         if not run_typst_compile(typ_path, cover_toc_path):
             return 1
+        actual_toc_pages = get_pdf_page_count(cover_toc_path)
 
     # Generate section title pages (one per grad_date group)
     groups = list(candidates.groupby("grad_date", sort=False))

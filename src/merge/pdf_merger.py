@@ -186,23 +186,28 @@ def add_internal_links(
             target_page_idx = max(0, target_page - 3)
             if target_page_idx < 0 or target_page_idx >= len(doc):
                 continue
+            best_match: tuple[int, pymupdf.Rect] | None = None
             for page_num in range(toc_start, toc_end):
                 if page_num >= len(doc):
                     break
                 page = doc[page_num]
                 rects = page.search_for(label, quads=False)
-                if rects:
-                    dest_page = doc[target_page_idx]
-                    mb = dest_page.mediabox
-                    top_left = pymupdf.Point(mb.x0, mb.y1)
-                    link = {
-                        "kind": pymupdf.LINK_GOTO,
-                        "from": rects[0],
-                        "page": target_page_idx,
-                        "to": top_left,
-                    }
-                    page.insert_link(link)
-                    break
+                for rect in rects:
+                    if best_match is None or rect.x0 < best_match[1].x0:
+                        best_match = (page_num, rect)
+            if best_match is None:
+                continue
+            dest_page = doc[target_page_idx]
+            mb = dest_page.mediabox
+            top_left = pymupdf.Point(mb.x0, mb.y1)
+            page = doc[best_match[0]]
+            link = {
+                "kind": pymupdf.LINK_GOTO,
+                "from": best_match[1],
+                "page": target_page_idx,
+                "to": top_left,
+            }
+            page.insert_link(link)
     finally:
         # Save to temp file then replace (Ghostscript output may not support incremental)
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
