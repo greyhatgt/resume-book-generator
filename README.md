@@ -135,6 +135,10 @@ These are local review outputs; they are not applied back to Google Sheets autom
 
 ## How It Works
 
+For a human-review receipt, isolated build, and validated local release, see
+[Reviewed local releases](docs/REVIEWED_BUILDS.md). Deployment remains a separate
+operator step until the existing Headstrong service is configured.
+
 1. **Typst** generates cover + TOC (no resume embedding). Names are plain text with optional tag badges and LinkedIn/GitHub icons; section headings link to section title pages.
 2. **Section pages**: A separate Typst file generates one title page per graduation group (e.g., "Dec 2024", "May 2025").
 3. **Merge**: `cover_toc.pdf` + section title pages + resume PDFs are merged (PyMuPDF, with section pages inserted between groups).

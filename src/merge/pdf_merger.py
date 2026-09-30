@@ -160,13 +160,12 @@ def add_internal_links(
 
         for name, target_page in candidates:
             # target_page is 1-based; PyMuPDF uses 0-indexed
-            target_page_idx = max(0, target_page - 2)
+            target_page_idx = target_page - 1
             if target_page_idx < 0 or target_page_idx >= len(doc):
                 continue
 
             dest_page = doc[target_page_idx]
-            mb = dest_page.mediabox
-            top_left = pymupdf.Point(mb.x0, mb.y1)
+            top_left = dest_page.rect.tl
             link_spec = {
                 "kind": pymupdf.LINK_GOTO,
                 "page": target_page_idx,
@@ -183,7 +182,7 @@ def add_internal_links(
 
         # Add section heading links after name links - go to page before first resume (section title)
         for label, target_page in section_links or []:
-            target_page_idx = max(0, target_page - 3)
+            target_page_idx = target_page - 2
             if target_page_idx < 0 or target_page_idx >= len(doc):
                 continue
             best_match: tuple[int, pymupdf.Rect] | None = None
@@ -198,8 +197,7 @@ def add_internal_links(
             if best_match is None:
                 continue
             dest_page = doc[target_page_idx]
-            mb = dest_page.mediabox
-            top_left = pymupdf.Point(mb.x0, mb.y1)
+            top_left = dest_page.rect.tl
             page = doc[best_match[0]]
             link = {
                 "kind": pymupdf.LINK_GOTO,
