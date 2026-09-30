@@ -115,7 +115,7 @@ def compute_section_page_numbers(
     groups = candidates.groupby("grad_date", sort=False)
     for grad_date, group_df in groups:
         grad_str = str(grad_date).strip()
-        section_pages[grad_str] = current_page + 1  # second resume page; link uses -3 to get section title
+        section_pages[grad_str] = current_page + 1  # first resume, 1-based; link uses -2 for section title
         current_page += 1  # section page
         for _, row in group_df.iterrows():
             fn = str(row["filename"]).strip()
